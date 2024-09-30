@@ -2,45 +2,48 @@
 
 class Cart
 {
-    private $items = [];
-    private $totalValue = 0;
-    private $shipping_cost = 15;
+    private $items = []; // Lista de produse din cos
+    private $totalValue = 0; // Valoarea totala a cosului
+    const SHIPPING_COST = 15; // Costul de livrare
 
-    public function addItem($item)
+    // Adauga un produs in cos
+    public function addItem(array $item)
     {
-        if (!empty($this->items[$item['product_id']])){
-            //produsul deja exista, actualizam cantitatea
-            $this->items[$item['product_id']]['qty'] += $item['qty'];
-        }else $this->items[$item['product_id']] = $item;
+        // Descompune valorile din array-ul $item in variabile separate pentru a facilita accesul
+        list($productId, $quantity, $price) = [$item['productId'], $item['qty'], $item['price']];
 
+        // Verifica daca produsul exista deja in cos
+        $this->items[$productId] = isset($this->items[$item['product_id']])
+            ? ['qty' => $this->items[$item[$productId]][$quantity] + $item[$quantity], 'price' => $item[$price]]
+            : $item;
 
-         $this->totalValue = 0;
-        foreach ($this->items as $item){
-            $this->totalValue += $item['price'] * $item['qty'];
-        }
-
-        if ($this->totalValue>200)      {
-            $this->shipping_cost = 0;
-        }
-
-        $this->totalValue +=$this->shipping_cost;
-
+        // Actualizeaza valoarea totala
+        $this->updateTotalValue();
     }
 
-    public function get_total_value()
+    // Actualizeaza valoarea totala a cosului
+    private function updateTotalValue()
     {
-        return $this->totalValue;
+        // Calculeaza valoarea totala folosind array_reduce
+        $this->totalValue = array_reduce($this->items, function ($carry, $item) {
+            return $carry + ($item['price'] * $item['qty']);
+        }, 0);
+
+        // Verifica daca valoarea totala depaseste 200 pentru a reduce costul de livrare
+        if ($this->totalValue > 200) {
+            $this->totalValue -= self::SHIPPING_COST;
+        }
     }
 
-    public function getShippingCost()
+    // Returneaza valoarea totala a cosului, inclusiv costul de livrare
+    public function getTotalValue(): float
     {
-        $this->shipping_cost = 15;
+        return $this->totalValue + self::SHIPPING_COST;
+    }
 
-        if ($this->totalValue > 200)
-        {
-            $this->shipping_cost = 0;
-        }
-
-        return $this->shipping_cost;
+    // Returneaza costul de livrare
+    public function getShippingCost(): float
+    {
+        return $this->totalValue > 200 ? 0 : self::SHIPPING_COST;
     }
 }
